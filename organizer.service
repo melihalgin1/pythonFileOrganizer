@@ -1,0 +1,24 @@
+[Unit]
+Description=Python File Organizer Service
+After=network.target
+
+[Service]
+# Run as your user (so it can access your Home folder)
+User="YourLinuxUsername"
+Group="YourLinuxUsername"
+
+# Path to Python and your Script
+# Update the following line with paths to match your system
+ExecStart="PATH_TO_PYTHON" "PATH_TO_SCRIPT"
+
+# Restart automatically if it crashes
+Restart=always
+RestartSec=3
+
+# Output logs to the system journal
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+# Start this when the OS boots up into multi-user mode (GUI or CLI)
+WantedBy=multi-user.target
