@@ -73,22 +73,5 @@ python organizer.py
    5. Start the script: sudo systemctl start organizer.service
    6. Optional: You can check service status with the command: systemctl status organizer
 
-## 📂 Project Structure
-file-organizer/
-├── organizer.py                 # Main logic script
-├── com.yourname.organizer.plist # macOS launchd configuration template
-├── organizer.pyw                # Silent executable file for Windows startup folder
-├── organizer.service            # Linux systemd configuration template
-├── organizer_history.log        # Generated log file (runtime)
-└── README.md                    # Documentation
-
-## 🧪 Cross-Platform Implementation
-The code abstracts file system paths to ensure compatibality
-# Dynamic path generation allows execution on Windows, Mac, and Linux
-# Recommended background methods:
-1. macOS  : launchd(.plist)      Tested and Documented
-2. Windows: Task Scheduler       Tested and Documented
-3. Linux  : systemd(.service)    Tested and Documented
-
 ## 📄 License
 Distributed under the MIT License. See LICENSE for more information.
