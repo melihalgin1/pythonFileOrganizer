@@ -38,21 +38,41 @@ logging.basicConfig(
 # --- THE LOGIC ---
 class SmartFileMover(FileSystemEventHandler):
     def on_created(self, event):
+        """Triggered when a file is pasted or dragged in."""
+        if event.is_directory:
+            return
+        
+        # Log and process
+        # logging.info(f"Detected creation: {event.src_path}") # Optional verbose log
+        self.move_file(event.src_path)
+
+    def on_moved(self, event):
+        """Triggered when a browser renames a download from .crdownload to .jpg"""
         if event.is_directory:
             return
 
-        time.sleep(1)
-        
-        # Log that we found something
-        logging.info(f"Detected new file: {event.src_path}")
-        self.move_file(event.src_path)
+        # For "moved" events, we care about where it ended up (dest_path),
+        # not where it started (src_path).
+        logging.info(f"Detected download completion (rename): {event.dest_path}")
+        self.move_file(event.dest_path)
 
     def move_file(self, file_path):
-        filename = os.path.basename(file_path)
-        # Skip the log file itself so we don't try to move it!
-        if filename == "organizer_history.log":
+        """Shared logic to check extension and move file."""
+        # 1. Check if file still exists (browsers can be tricky)
+        if not os.path.exists(file_path):
             return
 
+        filename = os.path.basename(file_path)
+        
+        # Safety: Don't move the log file!
+        if filename == "organizer_history.log":
+            return
+            
+        # 2. Filter out temporary browser files explicitly
+        if filename.endswith(".crdownload") or filename.endswith(".part") or filename.endswith(".tmp"):
+            return
+
+        # 3. Standard Logic
         extension = os.path.splitext(filename)[1].lower()
 
         for folder_name, extensions in DESTINATIONS.items():
@@ -70,12 +90,13 @@ class SmartFileMover(FileSystemEventHandler):
                     new_filename = f"{name}_{timestamp}{ext}"
                     destination_path = os.path.join(destination_folder, new_filename)
 
+                # Move and Log
                 try:
+                    # Small buffer time for the filesystem to unlock the file after rename
+                    time.sleep(1) 
                     shutil.move(file_path, destination_path)
-                    # Log the success
                     logging.info(f"SUCCESS: Moved '{filename}' to {folder_name}")
                 except Exception as e:
-                    # Log any errors
                     logging.error(f"ERROR moving {filename}: {e}")
                 return
 
