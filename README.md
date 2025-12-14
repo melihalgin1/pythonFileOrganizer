@@ -68,7 +68,10 @@ python organizer.py
 3. For Linux Users
    1. Open organizer.service in a text editor of your choice and update the Python and Script paths to match your system.
    2. Copy organizer.service to /etc/systemd/system/organizer.service
-   3. Reload systemd so it sees the new file: sudo systemctl daemon-reload
+   3. Reload systemd so it sees the new file 
+   ```bash
+    sudo systemctl daemon-reload
+    ```
    4. Enable the Script
      ```bash
     sudo systemctl enable organizer.service
