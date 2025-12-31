@@ -5,11 +5,14 @@
     <key>Label</key>
     <string>com.yourname.organizer</string>
 
+    <key>WorkingDirectory</key>
+    <string>/PATH/TO/YOUR/PROJECT_FOLDER</string>
+
     <key>ProgramArguments</key>
     <array>
-        <string>"PATH_TO_PYTHON3"</string>
+        <string>/PATH/TO/PYTHON_3</string>
         
-        <string>"PATH_TO_SCRIPT"</string>
+        <string>organizer.py</string>
     </array>
 
     <key>RunAtLoad</key>
@@ -18,9 +21,7 @@
     <key>KeepAlive</key>
     <true/>
 
-    <key>StandardOutPath</key>
-    <string>/tmp/organizer.out</string>
     <key>StandardErrorPath</key>
-    <string>/tmp/organizer.err</string>
+    <string>/tmp/organizer_service.err</string>
 </dict>
 </plist>

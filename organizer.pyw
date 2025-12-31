@@ -1,122 +1,125 @@
 import os
-from pathlib import Path
-import shutil
+import sys
 import time
+import json
 import logging
+import shutil
+from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-# Detect the user's home directory automatically
-# On Mac: /Users/YourName
-# On Windows: C:\Users\YourName
-# On Linux: /home/YourName
-HOME_DIR = os.path.expanduser("~")
+# --- 1. SETUP LOGGING ---
+# This saves a log file in the same folder as the script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+log_file = os.path.join(script_dir, "organizer.log")
 
-# Construct the Downloads path safely for ANY OS
-TRACKED_FOLDER = os.path.join(HOME_DIR, "Downloads")
-
-# Define the log file location dynamically
-LOG_FILE = os.path.join(TRACKED_FOLDER, "organizer_history.log")
-
-DESTINATIONS = {
-    "Images": [".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp"],
-    "Documents": [".pdf", ".docx", ".txt", ".xlsx", ".pptx"],
-    "Audio": [".mp3", ".wav"],
-    "Video": [".mp4", ".mov", ".avi"],
-    "Installers": [".exe", ".dmg", ".pkg", ".msi"]
-}
-
-# --- LOGGING SETUP ---
-# This tells Python: "Write to a file, include the time, and the message."
 logging.basicConfig(
-    filename=LOG_FILE,
+    filename=log_file,
     level=logging.INFO,
     format='%(asctime)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-# --- THE LOGIC ---
-class SmartFileMover(FileSystemEventHandler):
-    def on_created(self, event):
-        """Triggered when a file is pasted or dragged in."""
-        if event.is_directory:
+# --- 2. LOAD CONFIGURATION ---
+config_path = os.path.join(script_dir, 'config.json')
+
+try:
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+    
+    SOURCE_DIR = config['source_folder']
+    RULES = config['rules']
+    logging.info("Configuration loaded successfully.")
+
+except Exception as e:
+    logging.error(f"Failed to load config: {e}")
+    sys.exit(1)
+
+
+class MoverHandler(FileSystemEventHandler):
+    def on_modified(self, event):
+        # We scan the directory to handle files that might have been pasted
+        # or created quickly.
+        with os.scandir(SOURCE_DIR) as entries:
+            for entry in entries:
+                if entry.is_file():
+                    self.check_and_move(entry)
+
+    def check_and_move(self, entry):
+        filename = entry.name
+        # Skip hidden files (like .DS_Store)
+        if filename.startswith('.'):
             return
+
+        # Get extension (lowercase for consistent matching)
+        _, ext = os.path.splitext(filename)
+        ext = ext.lower()
+
+        # Check against our Config Rules
+        for category, data in RULES.items():
+            if ext in data['extensions']:
+                target_folder = data['target_path']
+                self.move_file(entry.path, filename, target_folder)
+                return  # Stop checking other categories once matched
+
+    def make_unique(self, destination, filename):
+        """
+        If file exists, adds a timestamp to the name to prevent overwriting.
+        Example: report.pdf -> report_16345023.pdf
+        """
+        base, extension = os.path.splitext(filename)
+        counter = 1
+        new_filename = filename
+        full_dest_path = os.path.join(destination, new_filename)
+
+        while os.path.exists(full_dest_path):
+            # Add timestamp for uniqueness
+            timestamp = int(time.time())
+            new_filename = f"{base}_{timestamp}{extension}"
+            full_dest_path = os.path.join(destination, new_filename)
         
-        # Log and process
-        # logging.info(f"Detected creation: {event.src_path}") # Optional verbose log
-        self.move_file(event.src_path)
+        return full_dest_path
 
-    def on_moved(self, event):
-        """Triggered when a browser renames a download from .crdownload to .jpg"""
-        if event.is_directory:
-            return
-
-        # For "moved" events, we care about where it ended up (dest_path),
-        # not where it started (src_path).
-        logging.info(f"Detected download completion (rename): {event.dest_path}")
-        self.move_file(event.dest_path)
-
-    def move_file(self, file_path):
-        """Shared logic to check extension and move file."""
-        # 1. Check if file still exists (browsers can be tricky)
-        if not os.path.exists(file_path):
-            return
-
-        filename = os.path.basename(file_path)
-        
-        # Safety: Don't move the log file!
-        if filename == "organizer_history.log":
-            return
-            
-        # 2. Filter out temporary browser files explicitly
-        if filename.endswith(".crdownload") or filename.endswith(".part") or filename.endswith(".tmp"):
-            return
-
-        # 3. Standard Logic
-        extension = os.path.splitext(filename)[1].lower()
-
-        for folder_name, extensions in DESTINATIONS.items():
-            if extension in extensions:
-                destination_folder = os.path.join(TRACKED_FOLDER, folder_name)
-                
-                if not os.path.exists(destination_folder):
-                    os.makedirs(destination_folder)
-                
-                # Handle Duplicates
-                destination_path = os.path.join(destination_folder, filename)
-                if os.path.exists(destination_path):
-                    name, ext = os.path.splitext(filename)
-                    timestamp = int(time.time())
-                    new_filename = f"{name}_{timestamp}{ext}"
-                    destination_path = os.path.join(destination_folder, new_filename)
-
-                # Move and Log
-                try:
-                    # Small buffer time for the filesystem to unlock the file after rename
-                    time.sleep(1) 
-                    shutil.move(file_path, destination_path)
-                    logging.info(f"SUCCESS: Moved '{filename}' to {folder_name}")
-                except Exception as e:
-                    logging.error(f"ERROR moving {filename}: {e}")
-                return
-
-# --- MAIN EXECUTION ---
-if __name__ == "__main__":
-    if not os.path.exists(TRACKED_FOLDER):
-        print(f"ERROR: Folder {TRACKED_FOLDER} not found.")
-    else:
-        event_handler = SmartFileMover()
-        observer = Observer()
-        observer.schedule(event_handler, TRACKED_FOLDER, recursive=False)
-        
-        # Log that the service started
-        logging.info("--- Service Started: Monitoring Folder ---")
-        
-        observer.start()
+    def move_file(self, src_path, filename, target_folder):
         try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            observer.stop()
-            logging.info("--- Service Stopped by User ---")
-        observer.join()
+            # 1. Ensure target folder exists
+            if not os.path.exists(target_folder):
+                os.makedirs(target_folder)
+
+            # 2. Generate a unique destination path
+            dest_path = self.make_unique(target_folder, filename)
+
+            # 3. Wait for file to be free (Basic Stability Check)
+            # This prevents moving a file while it is still downloading
+            initial_size = -1
+            while initial_size != os.path.getsize(src_path):
+                initial_size = os.path.getsize(src_path)
+                time.sleep(1) # Wait 1 second and check size again
+
+            # 4. Move
+            shutil.move(src_path, dest_path)
+            logging.info(f"Moved: {filename} -> {target_folder}")
+
+        except Exception as e:
+            logging.error(f"Error moving {filename}: {e}")
+
+if __name__ == "__main__":
+    # Startup Check
+    if not os.path.exists(SOURCE_DIR):
+        logging.error(f"Source folder does not exist: {SOURCE_DIR}")
+        sys.exit(1)
+
+    logging.info(f"Organizer Service Started. Watching: {SOURCE_DIR}")
+    
+    event_handler = MoverHandler()
+    observer = Observer()
+    observer.schedule(event_handler, SOURCE_DIR, recursive=False)
+    observer.start()
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+    
+    observer.join()

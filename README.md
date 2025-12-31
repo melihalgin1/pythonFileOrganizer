@@ -1,89 +1,124 @@
-# 📂 Python File Organizer Service
+# 📂 Python File Organizer (Automation Service)
 
-A cross-platform background automation tool that monitors directories in real-time and organizes files into subfolders based on their extensions. Designed to demonstrate system scripting, file I/O operations, and daemonized process management.
+**A high-performance, background automation tool that keeps your Downloads folder clean.**
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
+This is not just a script—it's a resilient **System Service** that runs in the background, monitoring your directories in real-time. It automatically detects new files, categorizes them based on your rules, and moves them to their designated folders instantly.
 
 ## 🚀 Key Features
 
-* **Event-Driven Architecture:** Utilizes the `watchdog` library to react to file system events immediately (avoiding resource-heavy polling loops).
-* **Cross-Platform Compatibility:** Implements `os.path` and `pathlib` for OS-agnostic path handling (works on macOS, Windows, and Linux).
-* **Smart Collision Handling:** Automatically detects duplicate filenames and renames new files with a timestamp to prevent data overwrites (e.g., `image.jpg` -> `image_170258.jpg`).
-* **Audit Logging:** Maintains a persistent `organizer_history.log` file to track every file movement and error for debugging purposes.
-* **Background Execution:** Includes configuration for running as a headless service via macOS `launchd`.
+* **⚡ Event-Driven (Zero Latency):** Uses the `watchdog` library to detect file creation instantly. No CPU-wasting "sleep loops."
+* **🛡️ Data Safety First:** Never overwrites files. If `report.pdf` exists, it auto-renames the new one to `report_16345.pdf` (timestamped).
+* **⚙️ Smart Configuration:** Fully customizable via `config.json`. Change folders or extensions without touching the code.
+* **🐛 Robust Architecture:**
+    * **Large File Protection:** Waits for large downloads (movies, ISOs) to finish writing before attempting to move them.
+    * **Professional Logging:** Tracks all actions to `organizer.log` instead of crashing console output.
+* **💻 Cross-Platform:** runs on macOS (launchd), Linux (systemd), and Windows.
 
-## 🛠️ Technical Stack
+---
 
-* **Language:** Python 3
-* **Libraries:** `watchdog`, `shutil`, `os`, `logging`, `time`
-* **Concepts:** File Systems, Observer Pattern, Error Handling, Daemonization.
+## 🛠️ Installation & Setup
 
-## ⚙️ Installation
-
-1.  **Clone the repository** (or download the source code):
-    ```bash
-    git clone https://github.com/melihalgin1/file-organizer.git
-    cd file-organizer
-    ```
-
-2.  **Install Dependencies:**
-    ```bash
-    pip install watchdog
-    ```
-
-## 🏃 Usage
-
-### 1. Configuration
-Open `organizer.py` and verify the `TRACKED_FOLDER` variable.
-* By default, it uses `os.path.expanduser("~")` to automatically find your **Downloads** folder on any operating system.
-
-### 2. Manual Execution (Testing)
-Run the script in your terminal to see it working:
+### 1. Clone the Repository
 ```bash
-python organizer.py
+git clone [https://github.com/yourusername/file-organizer.git](https://github.com/yourusername/file-organizer.git)
+cd file-organizer
 ```
-**Press Ctrl + C to stop the script.**
 
-### Running in the background
-1. For macOS users (Your OS may ask for specific permissions to be able to run in the background)
-   1. Open com.yourname.organizer.plist in a text editor of your choice and update the Python and Script paths to match your system.
-   2. Move the file to the LaunchAgents folder with the following command (or using finder if you wish).
-      cp com.yourname.organizer.plist ~/Library/LaunchAgents/
-   3. Load the Service with the following command
-      launchctl load ~/Library/LaunchAgents/com.yourname.organizer.plist
-2. For Windows Users
-   This project includes an optional organizer.pyw file to add to Windows startup folder
-   **Option 1: Startup Folder (Simple)**
-   1. Press `Win + R` and run `shell:startup`.
-   2. Place a shortcut to the `.pyw` file in this folder.
+### 2. Install Dependencies
+```bash
+pip install watchdog
+```
 
-   **Option 2: Task Scheduler (Recommended)**
-   1. Open Windows Task Scheduler and select "Create Task".
-   2. Set Trigger to **"At log on"**.
-   3. Set Action to **"Start a program"**:
-      * Program: `pythonw.exe`
-      * Arguments: `"C:\Path\To\organizer.py"`
-   4. In Settings, enable "Restart task if it fails" to ensure persistence.
-3. For Linux Users
-   1. Open organizer.service in a text editor of your choice and update the Python and Script paths to match your system.
-   2. Copy organizer.service to /etc/systemd/system/organizer.service
-   3. Reload systemd so it sees the new file 
-   ```bash
-    sudo systemctl daemon-reload
-    ```
-   4. Enable the Script
-     ```bash
-    sudo systemctl enable organizer.service
-    ```
-   5. Start the script
-   ```bash
-    sudo systemctl start organizer.service
-    ```
-   6. Optional: You can check service status with
+### 3. Configure Your Rules
+1.  Locate `config.example.json`.
+2.  Rename it to **`config.json`**.
+3.  Open it and set your **Source Folder** (e.g., Downloads) and **Target Paths**.
+    * *Note: Use double backslashes `\\` for Windows paths.*
+
+---
+
+## 🖥️ Running in the Background
+
+### 🍎 macOS (using `launchd`)
+
+1.  **Edit the Plist:**
+    Open `com.yourname.organizer.plist.example`.
+    * Replace `/PATH/TO/YOUR/PROJECT_FOLDER` with your actual path.
+    * Replace `/usr/bin/python3` with your Python path (run `which python3` to find it).
+2.  **Install:**
+    Rename the file to `com.yourname.organizer.plist` and move it:
     ```bash
-    systemctl status organizer
-    ```    
+    mv com.yourname.organizer.plist ~/Library/LaunchAgents/
+    ```
+3.  **Start Service:**
+    ```bash
+    launchctl load ~/Library/LaunchAgents/com.yourname.organizer.plist
+    ```
+4.  **Verify:**
+    Check the log file in your project folder: `tail -f organizer.log`
+
+### 🐧 Linux / Ubuntu (using `systemd`)
+
+1.  **Create Service File:**
+    ```bash
+    nano ~/.config/systemd/user/organizer.service
+    ```
+    *(If the folder doesn't exist, create it: `mkdir -p ~/.config/systemd/user/`)*
+
+2.  **Paste Configuration:**
+    ```ini
+    [Unit]
+    Description=Python File Organizer
+    After=network.target
+
+    [Service]
+    # IMPORTANT: Use quotes around the path if it contains spaces
+    ExecStart=/usr/bin/python3 "/home/YOUR_USER/path/to/organizer.py"
+    Restart=always
+
+    [Install]
+    WantedBy=default.target
+    ```
+3.  **Enable & Start:**
+    ```bash
+    systemctl --user enable organizer
+    systemctl --user start organizer
+    ```
+4.  **Check Status:**
+    ```bash
+    systemctl --user status organizer
+    ```
+
+### 🪟 Windows
+
+1.  Open **Task Scheduler**.
+2.  Create a Basic Task -> "Start a Program".
+3.  **Program/script:** `pythonw.exe` (This runs Python without a window).
+4.  **Arguments:** `C:\Path\To\organizer.py`
+5.  Set the trigger to **"At log on"**.
+
+---
+
+## 📝 Configuration Reference (`config.json`)
+
+Your `config.json` should look like this:
+
+```json
+{
+  "source_folder": "/Users/name/Downloads",
+  "rules": {
+    "Images": {
+      "target_path": "/Users/name/Pictures",
+      "extensions": [".jpg", ".png", ".svg"]
+    },
+    "Documents": {
+      "target_path": "/Users/name/Documents/Sorted",
+      "extensions": [".pdf", ".docx", ".txt"]
+    }
+  }
+}
+```
 
 ## 📄 License
-Distributed under the MIT License. See LICENSE for more information.
+
+This project is open source and available under the [MIT License](LICENSE).
