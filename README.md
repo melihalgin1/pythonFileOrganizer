@@ -20,8 +20,8 @@ This is not just a script—it's a resilient **System Service** that runs in the
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/melihalgin1/file-organizer.git
-cd file-organizer
+git clone [https://github.com/melihalgin1/pythonFileOrganizer.git](https://github.com/melihalgin1/pythonFileOrganizer.git)
+cd pythonFileOrganizer
 ```
 
 ### 2. Install Dependencies
