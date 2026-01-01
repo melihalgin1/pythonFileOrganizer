@@ -20,7 +20,7 @@ This is not just a script—it's a resilient **System Service** that runs in the
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/yourusername/file-organizer.git](https://github.com/yourusername/file-organizer.git)
+git clone https://github.com/melihalgin1/file-organizer.git
 cd file-organizer
 ```
 
@@ -30,7 +30,7 @@ pip install watchdog
 ```
 
 ### 3. Configure Your Rules
-1.  Locate `config.example.json`.
+1.  Locate `example_config.json`.
 2.  Rename it to **`config.json`**.
 3.  Open it and set your **Source Folder** (e.g., Downloads) and **Target Paths**.
     * *Note: Use double backslashes `\\` for Windows paths.*
@@ -44,7 +44,7 @@ pip install watchdog
 1.  **Edit the Plist:**
     Open `com.yourname.organizer.plist.example`.
     * Replace `/PATH/TO/YOUR/PROJECT_FOLDER` with your actual path.
-    * Replace `/usr/bin/python3` with your Python path (run `which python3` to find it).
+    * Replace `/PATH/TO/PYTHON` with your Python path (run `which python3` to find it).
 2.  **Install:**
     Rename the file to `com.yourname.organizer.plist` and move it:
     ```bash
@@ -94,8 +94,9 @@ pip install watchdog
 1.  Open **Task Scheduler**.
 2.  Create a Basic Task -> "Start a Program".
 3.  **Program/script:** `pythonw.exe` (This runs Python without a window).
-4.  **Arguments:** `C:\Path\To\organizer.py`
+4.  **Arguments:** `C:\Path\To\Organizer\start_organizer.bat` (Replace this to point to start_organizer.bat where you downloaded the script).
 5.  Set the trigger to **"At log on"**.
+6.  Launch the task from Task Scheduler. The script should automatically detect required path variables
 
 ---
 

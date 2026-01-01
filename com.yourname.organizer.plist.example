@@ -10,7 +10,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/PATH/TO/PYTHON_3</string>
+        <string>/PATH/TO/PYTHON</string>
         
         <string>organizer.py</string>
     </array>

@@ -8,7 +8,7 @@
       ]
     },
     "Documents": {
-      "target_path": "/PATH/TO/YOUR/DOCUMENTS/Sorted_Docs",
+      "target_path": "/PATH/TO/YOUR/DOCUMENTS/",
       "extensions": [
         ".pdf", ".docx", ".doc", ".txt", ".xlsx", ".pptx", ".csv", ".md"
       ]
