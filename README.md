@@ -20,7 +20,7 @@ This is not just a script—it's a resilient **System Service** that runs in the
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/melihalgin1/pythonFileOrganizer.git](https://github.com/melihalgin1/pythonFileOrganizer.git)
+git clone https://github.com/melihalgin1/pythonFileOrganizer.git
 cd pythonFileOrganizer
 ```
 
